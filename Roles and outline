@@ -1,0 +1,18 @@
+# 🐚 ShellBreaker — Hackathon MVP Tech Stack
+
+## Overview
+
+A gamified social challenge web app that pushes users out of their comfort zone through daily social challenges. Built as an MVP for hackathon.
+
+---
+
+## Tech Stack
+
+Frontend - React + Tailwind CSS
+Backend - Fast API
+Database - SQLite
+Auth - JWT (via python-jose)
+
+
+
+
