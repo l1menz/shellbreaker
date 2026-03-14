@@ -1,13 +1,11 @@
-from sqlalchemy import (
-    Column, Integer, String, Boolean, Float,
-    DateTime, ForeignKey, Text, Enum
-)
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Boolean, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from app.database import Base
 import enum
 
-from .database import Base
 
+# ── Enums ─────────────────────────────────────────────────────────────────────
 
 class DifficultyLevel(str, enum.Enum):
     easy = "easy"
@@ -15,117 +13,151 @@ class DifficultyLevel(str, enum.Enum):
     hard = "hard"
 
 
-class ChallengeCategory(str, enum.Enum):
-    greeting = "greeting"
-    conversation = "conversation"
-    activity = "activity"
-    dare = "dare"
-
-
-# ─────────────────────────────────────────────
-# Users
-# ─────────────────────────────────────────────
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, nullable=False, index=True)
-    email = Column(String(120), unique=True, nullable=False, index=True)
-    hashed_password = Column(String, nullable=False)
-    display_name = Column(String(80), nullable=True)
-    avatar_url = Column(String, nullable=True)
-
-    # Gamification
-    xp = Column(Integer, default=0)
-    level = Column(Integer, default=1)
-    streak = Column(Integer, default=0)           # consecutive days active
-    longest_streak = Column(Integer, default=0)
-
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_seen_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Relationships
-    progress = relationship("UserChallengeProgress", back_populates="user", cascade="all, delete-orphan")
-    badges = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
-
-
-# ─────────────────────────────────────────────
-# Challenges
-# ─────────────────────────────────────────────
-class Challenge(Base):
-    __tablename__ = "challenges"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(120), nullable=False)
-    description = Column(Text, nullable=False)
-    instructions = Column(Text, nullable=True)        # step-by-step guide
-    difficulty = Column(Enum(DifficultyLevel), default=DifficultyLevel.easy)
-    category = Column(Enum(ChallengeCategory), default=ChallengeCategory.greeting)
-    xp_reward = Column(Integer, default=10)
-    requires_partner = Column(Boolean, default=False)  # NFC / two-player challenges
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    progress = relationship("UserChallengeProgress", back_populates="challenge")
-
-
-# ─────────────────────────────────────────────
-# User ↔ Challenge progress (join table + status)
-# ─────────────────────────────────────────────
 class ChallengeStatus(str, enum.Enum):
-    assigned = "assigned"
-    in_progress = "in_progress"
+    pending = "pending"
     completed = "completed"
     skipped = "skipped"
 
 
-class UserChallengeProgress(Base):
-    __tablename__ = "user_challenge_progress"
+class ChallengeCategory(str, enum.Enum):
+    social = "social"
+    fitness = "fitness"
+    career = "career"
+    skills = "skills"
+
+
+class FriendStatus(str, enum.Enum):
+    pending = "pending"
+    accepted = "accepted"
+    declined = "declined"
+
+
+class BetStatus(str, enum.Enum):
+    open = "open"          # waiting for opponent to accept
+    active = "active"      # both accepted, in progress
+    completed = "completed"
+    cancelled = "cancelled"
+
+
+# ── Core models ───────────────────────────────────────────────────────────────
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    xp = Column(Integer, default=0)
+    streak = Column(Integer, default=0)
+    coins = Column(Integer, default=100)    # in-game currency for betting
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    challenge_attempts = relationship("UserChallenge", back_populates="user")
+    nfc_tag = relationship("NFCTag", back_populates="owner", uselist=False)
+
+    sent_requests = relationship(
+        "Friendship", foreign_keys="Friendship.requester_id", back_populates="requester"
+    )
+    received_requests = relationship(
+        "Friendship", foreign_keys="Friendship.addressee_id", back_populates="addressee"
+    )
+
+    bets_initiated = relationship("Bet", foreign_keys="Bet.challenger_id", back_populates="challenger")
+    bets_received = relationship("Bet", foreign_keys="Bet.opponent_id", back_populates="opponent")
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    difficulty = Column(Enum(DifficultyLevel), nullable=False)
+    category = Column(Enum(ChallengeCategory), nullable=False)
+    points = Column(Integer, nullable=False)    # XP reward on completion
+
+    attempts = relationship("UserChallenge", back_populates="challenge")
+    bets = relationship("Bet", back_populates="challenge")
+
+
+class UserChallenge(Base):
+    __tablename__ = "user_challenges"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     challenge_id = Column(Integer, ForeignKey("challenges.id"), nullable=False)
-    status = Column(Enum(ChallengeStatus), default=ChallengeStatus.assigned)
-    partner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # for NFC challenges
-    note = Column(Text, nullable=True)                 # optional user reflection
-    xp_earned = Column(Integer, default=0)
-    assigned_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(Enum(ChallengeStatus), default=ChallengeStatus.pending)
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    assigned_date = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
-    user = relationship("User", foreign_keys=[user_id], back_populates="progress")
-    challenge = relationship("Challenge", back_populates="progress")
-    partner = relationship("User", foreign_keys=[partner_user_id])
-
-
-# ─────────────────────────────────────────────
-# Badges
-# ─────────────────────────────────────────────
-class Badge(Base):
-    __tablename__ = "badges"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(80), unique=True, nullable=False)
-    description = Column(Text, nullable=False)
-    icon_url = Column(String, nullable=True)
-    xp_threshold = Column(Integer, nullable=True)      # awarded at this XP value
-    streak_threshold = Column(Integer, nullable=True)  # awarded at this streak count
-    challenge_count_threshold = Column(Integer, nullable=True)
-
-    # Relationships
-    users = relationship("UserBadge", back_populates="badge")
+    user = relationship("User", back_populates="challenge_attempts")
+    challenge = relationship("Challenge", back_populates="attempts")
 
 
-class UserBadge(Base):
-    __tablename__ = "user_badges"
+# ── NFC Tag ───────────────────────────────────────────────────────────────────
+
+class NFCTag(Base):
+    """
+    Represents a physical NFC sticker owned by a user.
+    Stores their preferred challenge categories and a health score
+    that updates each time the tag is scanned/checked in.
+    """
+    __tablename__ = "nfc_tags"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    badge_id = Column(Integer, ForeignKey("badges.id"), nullable=False)
-    awarded_at = Column(DateTime(timezone=True), server_default=func.now())
+    owner_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
-    # Relationships
-    user = relationship("User", back_populates="badges")
-    badge = relationship("Badge", back_populates="users")
+    # Comma-separated list of enabled categories e.g. "social,fitness"
+    # Kept simple to avoid a join table for the MVP
+    enabled_categories = Column(String, default="social")
+
+    health_score = Column(Integer, default=100)   # 0–100, decays without check-ins
+    last_checkin = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner = relationship("User", back_populates="nfc_tag")
+
+
+# ── Friendships ───────────────────────────────────────────────────────────────
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    addressee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(Enum(FriendStatus), default=FriendStatus.pending)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    requester = relationship("User", foreign_keys=[requester_id], back_populates="sent_requests")
+    addressee = relationship("User", foreign_keys=[addressee_id], back_populates="received_requests")
+
+
+# ── Bets ──────────────────────────────────────────────────────────────────────
+
+class Bet(Base):
+    """
+    One user challenges another on a specific challenge.
+    Both wager coins. The first to complete wins the pot.
+    """
+    __tablename__ = "bets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    challenger_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    opponent_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    challenge_id = Column(Integer, ForeignKey("challenges.id"), nullable=False)
+
+    wager = Column(Integer, nullable=False)         # coins each side puts in
+    status = Column(Enum(BetStatus), default=BetStatus.open)
+    winner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    challenger = relationship("User", foreign_keys=[challenger_id], back_populates="bets_initiated")
+    opponent = relationship("User", foreign_keys=[opponent_id], back_populates="bets_received")
+    challenge = relationship("Challenge", back_populates="bets")
+    winner = relationship("User", foreign_keys=[winner_id])
