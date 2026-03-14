@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine
 from app import models
-from app.routers import users, challenges, progress
+from app.routers import user, challenges, progress, nfc
 
 #Creates DB tables
 models.Base.metadata.create_all(bind=engine)
@@ -24,12 +24,10 @@ app.add_middleware(
 )
 
 # Routers
-app.include_router(users.router)
-app.include_router(challenges.router)  
+app.include_router(user.router)
+app.include_router(challenges.router)
 app.include_router(progress.router)
 app.include_router(nfc.router)
-app.include_router(friends.router)
-app.include_router(bets.router)
 
 @app.get("/", tags=["health"])
 def root():
