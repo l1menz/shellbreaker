@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,8 +11,8 @@ from app.routers import user, challenges, progress, nfc
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="ShellBreaker API",
-    description="Backend for the ShellBreaker social challenge app",
+    title="Taskerbait API",
+    description="Backend for the Taskerbait social challenge app",
     version="0.1.0",
 )
 
@@ -31,4 +33,4 @@ app.include_router(nfc.router)
 
 @app.get("/", tags=["health"])
 def root():
-    return {"status": "ok", "message": "ShellBreaker API is running"}
+    return {"status": "ok", "message": "Taskerbait API is running"}

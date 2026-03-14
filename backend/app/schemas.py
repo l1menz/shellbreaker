@@ -35,6 +35,14 @@ class UserPublic(UserBase):
         from_attributes = True
 
 
+class UserOut(UserPublic):
+    """
+    Backwards-compatible alias for older code that expects `UserOut`.
+    Currently identical to `UserPublic`.
+    """
+    pass
+
+
 # ─────────────────────────────────────────────
 # Challenge schemas
 # ─────────────────────────────────────────────
@@ -90,6 +98,11 @@ class ProgressOut(BaseModel):
         from_attributes = True
 
 
+# Backwards-compatible alias for older code that expects `UserChallengeOut`.
+class UserChallengeOut(ProgressOut):
+    pass
+
+
 # ─────────────────────────────────────────────
 # Badge schemas
 # ─────────────────────────────────────────────
@@ -105,6 +118,32 @@ class BadgeOut(BaseModel):
 
 
 # ─────────────────────────────────────────────
+# NFC schemas
+# ─────────────────────────────────────────────
+class NFCTagCreate(BaseModel):
+    enabled_categories: list[ChallengeCategory]
+
+
+class NFCTagUpdate(BaseModel):
+    enabled_categories: Optional[list[ChallengeCategory]] = None
+
+
+class NFCTagOut(BaseModel):
+    id: int
+    owner_id: int
+    enabled_categories: str
+    last_checkin: Optional[datetime]
+    health_score: int
+
+    class Config:
+        from_attributes = True
+
+
+class NFCCheckin(BaseModel):
+    tag_owner_id: int
+
+
+# ─────────────────────────────────────────────
 # Auth schemas
 # ─────────────────────────────────────────────
 class Token(BaseModel):
@@ -114,3 +153,8 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None
+
+
+class CompleteChallenge(BaseModel):
+    """Body for marking a user challenge as completed."""
+    user_challenge_id: int

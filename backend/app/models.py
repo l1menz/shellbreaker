@@ -40,14 +40,21 @@ class User(Base):
     level = Column(Integer, default=1)
     streak = Column(Integer, default=0)           # consecutive days active
     longest_streak = Column(Integer, default=0)
+    coins = Column(Integer, default=0)
 
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_seen_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    progress = relationship("UserChallengeProgress", back_populates="user", cascade="all, delete-orphan")
+    progress = relationship(
+        "UserChallengeProgress",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="UserChallengeProgress.user_id",
+    )
     badges = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
+    nfc_tag = relationship("NFCTag", back_populates="owner", uselist=False)
 
 
 # ─────────────────────────────────────────────
@@ -98,6 +105,22 @@ class UserChallengeProgress(Base):
     user = relationship("User", foreign_keys=[user_id], back_populates="progress")
     challenge = relationship("Challenge", back_populates="progress")
     partner = relationship("User", foreign_keys=[partner_user_id])
+
+
+# ─────────────────────────────────────────────
+# NFC tags
+# ─────────────────────────────────────────────
+class NFCTag(Base):
+    __tablename__ = "nfc_tags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    enabled_categories = Column(Text, nullable=False, default="")  # comma-separated ChallengeCategory values
+    last_checkin = Column(DateTime(timezone=True), nullable=True)
+    health_score = Column(Integer, default=100)
+
+    # Relationships
+    owner = relationship("User", back_populates="nfc_tag")
 
 
 # ─────────────────────────────────────────────

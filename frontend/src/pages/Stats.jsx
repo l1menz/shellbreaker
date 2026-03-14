@@ -21,7 +21,7 @@ export default function Stats() {
       {/* Header */}
       <div>
         <h1 className="pixel-text text-lg text-white">My Stats</h1>
-        <p className="text-white/40 text-xs mt-1.5">Your shell-breaking progress</p>
+        <p className="text-white/40 text-xs mt-1.5">Your progress</p>
       </div>
 
       {/* XP card */}

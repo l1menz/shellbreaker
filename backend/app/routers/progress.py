@@ -24,10 +24,10 @@ def get_todays_challenges(
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
     existing = (
-        db.query(models.UserChallenge)
+        db.query(models.UserChallengeProgress)
         .filter(
-            models.UserChallenge.user_id == current_user.id,
-            models.UserChallenge.assigned_date >= today_start,
+            models.UserChallengeProgress.user_id == current_user.id,
+            models.UserChallengeProgress.assigned_at >= today_start,
         )
         .all()
     )
@@ -41,7 +41,7 @@ def get_todays_challenges(
 
     assignments = []
     for challenge in selected:
-        uc = models.UserChallenge(user_id=current_user.id, challenge_id=challenge.id)
+        uc = models.UserChallengeProgress(user_id=current_user.id, challenge_id=challenge.id)
         db.add(uc)
         assignments.append(uc)
 
@@ -60,10 +60,10 @@ def complete_challenge(
 ):
     """Mark a UserChallenge as completed and award XP to the user."""
     uc = (
-        db.query(models.UserChallenge)
+        db.query(models.UserChallengeProgress)
         .filter(
-            models.UserChallenge.id == body.user_challenge_id,
-            models.UserChallenge.user_id == current_user.id,
+            models.UserChallengeProgress.id == body.user_challenge_id,
+            models.UserChallengeProgress.user_id == current_user.id,
         )
         .first()
     )
@@ -77,7 +77,7 @@ def complete_challenge(
     uc.completed_at = datetime.now(timezone.utc)
 
     # Award XP
-    current_user.xp += uc.challenge.points
+    current_user.xp += uc.challenge.xp_reward
 
     db.commit()
     db.refresh(uc)
@@ -91,8 +91,8 @@ def get_history(
 ):
     """Return all challenge attempts for the current user."""
     return (
-        db.query(models.UserChallenge)
-        .filter(models.UserChallenge.user_id == current_user.id)
-        .order_by(models.UserChallenge.assigned_date.desc())
+        db.query(models.UserChallengeProgress)
+        .filter(models.UserChallengeProgress.user_id == current_user.id)
+        .order_by(models.UserChallengeProgress.assigned_at.desc())
         .all()
     )

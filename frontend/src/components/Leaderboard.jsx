@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { getLeaderboard } from '../api'
+
 const mockLeaderboard = [
   { rank: 1, name: 'Blat', score: 320, emoji: '🦁' },
   { rank: 2, name: 'Gyat', score: 280, emoji: '🐉' },
@@ -6,9 +9,45 @@ const mockLeaderboard = [
 ]
 
 export default function Leaderboard() {
+  const [entries, setEntries] = useState(mockLeaderboard)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getLeaderboard()
+      .then(data => {
+        if (cancelled) return
+        const mapped = data.map((user, index) => ({
+          rank: index + 1,
+          name: user.username,
+          score: user.xp,
+          emoji: '🔥',
+          isUser: user.is_self || false,
+        }))
+        setEntries(mapped)
+      })
+      .catch(() => {
+        if (cancelled) return
+        // keep mock data on error
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <div className="space-y-2">
-      {mockLeaderboard.map((entry) => (
+      {loading && (
+        <div className="text-xs text-white/40 px-1 pb-1">
+          Loading leaderboard...
+        </div>
+      )}
+      {entries.map((entry) => (
         <div
           key={entry.rank}
           className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
