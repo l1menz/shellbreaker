@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import * as api from '../api'
@@ -10,9 +10,12 @@ const TAG_TYPES = [
   { id: 'skills', label: 'Skills', emoji: '📚', desc: 'Learn, teach, build' },
 ]
 
+const VALID_TAG_IDS = new Set(TAG_TYPES.map((t) => t.id))
+
 export default function NFCScan() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { addCompetition, refreshToday, refreshAll } = useApp()
   const [phase, setPhase] = useState('select') // select | scanning | found | success | challenge
   const [selectedTag, setSelectedTag] = useState(null)
@@ -21,6 +24,24 @@ export default function NFCScan() {
   const config = location.state || {}
   const isChallengeMode = config.wager != null && config.challenge
 
+  // When arriving via NFC URL (e.g. /scan?tag_type=fitness or /f, /s, /c, /k), auto-trigger scan
+  useEffect(() => {
+    if (isChallengeMode) return
+    let tagTypeFromUrl = searchParams.get('tag_type')?.toLowerCase()
+    if (!tagTypeFromUrl) {
+      // Short paths: /f, /s, /c, /k
+      const shortMap = { f: 'fitness', s: 'social', c: 'career', k: 'skills' }
+      const pathPart = location.pathname.replace(/\/$/, '').split('/').pop()
+      tagTypeFromUrl = shortMap[pathPart]
+    }
+    if (tagTypeFromUrl && VALID_TAG_IDS.has(tagTypeFromUrl) && phase === 'select') {
+      const tag = TAG_TYPES.find((t) => t.id === tagTypeFromUrl)
+      setSelectedTag(tag)
+      setPhase('scanning')
+      setError('')
+    }
+  }, [searchParams, location.pathname, isChallengeMode, phase])
+
   // Scan tag to load challenges (default mode)
   const handleSelectTag = (tagType) => {
     setSelectedTag(tagType)
@@ -28,9 +49,11 @@ export default function NFCScan() {
     setError('')
   }
 
-  // Simulate NFC scan delay when tag selected, then call API
+  // Call API when scanning (from manual select or NFC URL)
   useEffect(() => {
     if (phase !== 'scanning' || !selectedTag) return
+    const fromNfcUrl = searchParams.get('tag_type') || ['/f', '/s', '/c', '/k'].includes(location.pathname)
+    const delay = fromNfcUrl ? 800 : 2000 // Shorter when from NFC URL
     const id = setTimeout(async () => {
       try {
         await api.nfcScanTag(selectedTag.id)
@@ -41,9 +64,9 @@ export default function NFCScan() {
         setError(err.message || 'Failed to load challenges')
         setPhase('select')
       }
-    }, 2000)
+    }, delay)
     return () => clearTimeout(id)
-  }, [phase, selectedTag, navigate, refreshAll])
+  }, [phase, selectedTag, navigate, refreshAll, searchParams, location.pathname])
 
   // Challenge friend mode (from Compete)
   const handleAcceptChallenge = () => {

@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login, authError, loading } = useApp()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +19,9 @@ export default function Login() {
     }
     try {
       await login(username.trim(), password)
-      navigate('/home', { replace: true })
+      const from = location.state?.from
+      const redirectTo = from ? `${from.pathname}${from.search || ''}` : '/home'
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       try {
         const parsed = JSON.parse(err.message)
@@ -74,7 +77,7 @@ export default function Login() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/', { state: location.state })}
               className="btn-ghost w-full"
             >
               Back

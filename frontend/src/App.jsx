@@ -34,6 +34,11 @@ export default function App() {
               >
                 <Route path="/home" element={<Home />} />
                 <Route path="/scan" element={<NFCScan />} />
+                {/* Short NFC URLs for small tags: /f, /s, /c, /k */}
+                <Route path="/f" element={<NFCScan />} />
+                <Route path="/s" element={<NFCScan />} />
+                <Route path="/c" element={<NFCScan />} />
+                <Route path="/k" element={<NFCScan />} />
                 <Route path="/compete" element={<Compete />} />
                 <Route path="/competition" element={<Competition />} />
                 <Route path="/stats" element={<Stats />} />

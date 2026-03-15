@@ -1,7 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function Onboarding() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = location.state?.from
 
   return (
     <div className="flex flex-col items-center justify-between h-full px-8 py-16 bg-[#0a0a0a] animate-fade-in">
@@ -51,13 +53,13 @@ export default function Onboarding() {
       {/* Bottom CTAs */}
       <div className="w-full space-y-3">
         <button
-          onClick={() => navigate('/register')}
+          onClick={() => navigate('/register', { state: returnTo ? { from: returnTo } : undefined })}
           className="btn-primary w-full text-sm py-4 animate-glow-pulse"
         >
           Get Started
         </button>
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/login', { state: returnTo ? { from: returnTo } : undefined })}
           className="btn-ghost w-full text-sm py-3"
         >
           I already have an account

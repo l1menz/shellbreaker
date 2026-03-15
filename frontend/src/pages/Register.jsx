@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 
 export default function Register() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { registerUser, loading } = useApp()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -19,7 +20,9 @@ export default function Register() {
     }
     try {
       await registerUser({ username: username.trim(), email: email.trim(), password })
-      navigate('/home', { replace: true })
+      const from = location.state?.from
+      const redirectTo = from ? `${from.pathname}${from.search || ''}` : '/home'
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       try {
         const parsed = JSON.parse(err.message)
@@ -82,7 +85,7 @@ export default function Register() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: location.state })}
               className="btn-ghost w-full"
             >
               I already have an account
