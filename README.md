@@ -1,93 +1,176 @@
-# UNIHACK 2026
+# 🐚 ShellBreaker
 
+> Break out of your shell, one challenge at a time.
 
+ShellBreaker is a gamified social app that helps people overcome social anxiety through daily real-world challenges — from simple greetings to full-on social dares. Earn XP, unlock badges, and level up your social confidence.
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## The Idea
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Modern life keeps us stuck in our own bubbles. ShellBreaker fights that by giving you a daily nudge — small, achievable social challenges that gradually push your comfort zone. Think of it like a fitness app, but for social skills.
 
-## Add your files
+Future features include NFC scanning to complete partner challenges with other ShellBreaker users in the real world.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React + Vite + Tailwind CSS |
+| Backend | FastAPI (Python) |
+| Database | PostgreSQL + SQLAlchemy |
+| Auth | JWT (via python-jose) |
+| Deployment | Railway |
+
+---
+
+## Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/rocket-league-pro-squad/unihack-2026.git
-git branch -M main
-git push -uf origin main
+shellbreaker/
+├── frontend/          # React + Vite app
+│   └── src/
+│       ├── components/    # ChallengeCard, Leaderboard, NavBar, etc.
+│       ├── pages/         # Home, Challenge, Profile, Login
+│       ├── hooks/
+│       └── services/      # API wrappers
+│
+└── backend/           # FastAPI app
+    └── app/
+        ├── main.py        # Entry point + CORS
+        ├── database.py    # DB connection
+        ├── models.py      # SQLAlchemy tables
+        ├── schemas.py     # Pydantic models
+        ├── seed.py        # Starter data
+        └── routers/       # users, challenges, progress
 ```
 
-## Integrate with your tools
+---
 
-* [Set up project integrations](https://gitlab.com/rocket-league-pro-squad/unihack-2026/-/settings/integrations)
+## Getting Started
 
-## Collaborate with your team
+### Prerequisites
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+- Python 3.11+
+- Node.js 18+
+- A PostgreSQL database (see below)
 
-## Test and Deploy
+---
 
-Use the built-in continuous integration in GitLab.
+### Backend Setup
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-***
+Copy the example env file and fill in your database URL:
 
-# Editing this README
+```bash
+cp .env.example .env
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```env
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/shellbreaker
+SECRET_KEY=your-secret-key-here
+```
 
-## Suggestions for a good README
+Seed the database with starter challenges and badges:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```bash
+python -m app.seed
+```
 
-## Name
-Choose a self-explaining name for your project.
+Start the server:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+uvicorn app.main:app --reload
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+API will be running at `http://localhost:8000`. Visit `/docs` for the interactive Swagger UI.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Frontend Setup
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+App will be running at `http://localhost:5173`.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+---
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Local PostgreSQL (via Docker)
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+No Postgres installed? Spin one up with Docker:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+docker compose up -d
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+`docker-compose.yml`:
 
-## License
-For open source projects, say how it is licensed.
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: shellbreaker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+---
+
+## Deploying to Railway
+
+1. Push the repo to GitHub
+2. Create a new project on [Railway](https://railway.app)
+3. Add a **PostgreSQL** plugin — Railway will auto-inject `DATABASE_URL`
+4. Add your backend as a service pointing to the `backend/` directory
+5. Add `SECRET_KEY` in the Railway environment variables
+6. Deploy — Railway handles the rest
+
+---
+
+## Database Overview
+
+| Table | Description |
+|-------|-------------|
+| `users` | Auth, XP, level, streak |
+| `challenges` | Title, difficulty, category, XP reward, partner flag |
+| `user_challenge_progress` | Tracks each user's challenge status |
+| `badges` | Badge definitions with unlock thresholds |
+| `user_badges` | Badges earned by each user |
+
+Challenges have four categories (`greeting`, `conversation`, `activity`, `dare`) and three difficulty levels (`easy`, `medium`, `hard`). Partner challenges have a `requires_partner` flag ready for the NFC feature.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/users/register` | Register a new user |
+| GET | `/users/{id}` | Get user profile |
+| GET | `/users/{id}/badges` | Get user badges |
+| GET | `/users/leaderboard/top` | Top users by XP |
+| GET | `/challenges/` | List all challenges |
+| GET | `/challenges/daily` | Get today's challenge |
+| GET | `/challenges/{id}` | Get a single challenge |
+| POST | `/progress/assign` | Assign a challenge to a user |
+| PATCH | `/progress/{id}` | Update progress / complete |
+| GET | `/progress/user/{id}` | Get all progress for a user |
+
+---
+
+## Team
+
+Built at [Hackathon Name] by [Your Team Name].
