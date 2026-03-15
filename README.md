@@ -1,14 +1,14 @@
-# 🐚 ShellBreaker
+# ShellBreaker
 
 > Break out of your shell, one challenge at a time.
 
-ShellBreaker is a gamified social app that helps people overcome social anxiety through daily real-world challenges — from simple greetings to full-on social dares. Earn XP, unlock badges, and level up your social confidence.
+ShellBreaker is a gamified social app that helps people overcome social anxiety through daily real-world challenges; from simple greetings to full-on social dares. Earn XP, unlock badges, and level up your social confidence.
 
 ---
 
 ## The Idea
 
-Modern life keeps us stuck in our own bubbles. ShellBreaker fights that by giving you a daily nudge — small, achievable social challenges that gradually push your comfort zone. Think of it like a fitness app, but for social skills.
+Modern life keeps us stuck in our own bubbles. ShellBreaker fights that by giving you a daily nudge, small, achievable social challenges that gradually push your comfort zone. Think of it like a fitness app, but for social skills.
 
 Future features include NFC scanning to complete partner challenges with other ShellBreaker users in the real world.
 
@@ -59,87 +59,6 @@ shellbreaker/
 
 ---
 
-### Backend Setup
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-Copy the example env file and fill in your database URL:
-
-```bash
-cp .env.example .env
-```
-
-```env
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/shellbreaker
-SECRET_KEY=your-secret-key-here
-```
-
-Seed the database with starter challenges and badges:
-
-```bash
-python -m app.seed
-```
-
-Start the server:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-API will be running at `http://localhost:8000`. Visit `/docs` for the interactive Swagger UI.
-
----
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App will be running at `http://localhost:5173`.
-
----
-
-### Local PostgreSQL (via Docker)
-
-No Postgres installed? Spin one up with Docker:
-
-```bash
-docker compose up -d
-```
-
-`docker-compose.yml`:
-
-```yaml
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: shellbreaker
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: yourpassword
-    ports:
-      - "5432:5432"
-```
-
----
-
-## Deploying to Railway
-
-1. Push the repo to GitHub
-2. Create a new project on [Railway](https://railway.app)
-3. Add a **PostgreSQL** plugin — Railway will auto-inject `DATABASE_URL`
-4. Add your backend as a service pointing to the `backend/` directory
-5. Add `SECRET_KEY` in the Railway environment variables
-6. Deploy — Railway handles the rest
-
----
-
 ## Database Overview
 
 | Table | Description |
@@ -173,4 +92,4 @@ Challenges have four categories (`greeting`, `conversation`, `activity`, `dare`)
 
 ## Team
 
-Built at [Hackathon Name] by [Your Team Name].
+Built at UNIHACK by Rocket league pro squad.
