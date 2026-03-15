@@ -147,18 +147,18 @@ def complete_bet(
 
     # Also mark the challenge complete for this user if not already done
     uc = (
-        db.query(models.UserChallenge)
+        db.query(models.UserChallengeProgress)
         .filter(
-            models.UserChallenge.user_id == current_user.id,
-            models.UserChallenge.challenge_id == bet.challenge_id,
-            models.UserChallenge.status != models.ChallengeStatus.completed,
+            models.UserChallengeProgress.user_id == current_user.id,
+            models.UserChallengeProgress.challenge_id == bet.challenge_id,
+            models.UserChallengeProgress.status != models.ChallengeStatus.completed,
         )
         .first()
     )
     if uc:
         uc.status = models.ChallengeStatus.completed
         uc.completed_at = datetime.now(timezone.utc)
-        current_user.xp += bet.challenge.points
+        current_user.xp += bet.challenge.xp_reward
 
     db.commit()
     db.refresh(bet)

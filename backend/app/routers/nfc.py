@@ -7,6 +7,9 @@ from app.database import get_db
 
 router = APIRouter(prefix="/nfc", tags=["nfc"])
 
+VALID_TAG_TYPES = {"fitness", "social", "career", "skills"}
+CHALLENGES_PER_TAG = 10
+
 
 def _categories_to_str(categories: list) -> str:
     return ",".join([c.value if hasattr(c, "value") else c for c in categories])
@@ -89,6 +92,54 @@ def checkin(
     db.commit()
     db.refresh(tag)
     return tag
+
+
+@router.post("/scan", response_model=list[schemas.UserChallengeOut])
+def scan_tag(
+    body: schemas.NFCTagScan,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """
+    Called when a user scans an NFC tag (e.g. at a gym, cafe).
+    The tag has a type (fitness, social, career, skills) and ~10 built-in challenges.
+    Assigns those challenges to the user, replacing any current incomplete tasks.
+    """
+    tag_type = body.tag_type.lower().strip()
+    if tag_type not in VALID_TAG_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid tag_type. Must be one of: {', '.join(VALID_TAG_TYPES)}",
+        )
+
+    # Get challenges for this tag type
+    challenges = (
+        db.query(models.Challenge)
+        .filter(models.Challenge.tag_type == tag_type, models.Challenge.is_active == True)
+        .limit(CHALLENGES_PER_TAG)
+        .all()
+    )
+    if not challenges:
+        raise HTTPException(status_code=404, detail=f"No challenges found for tag type '{tag_type}'")
+
+    # Remove user's current incomplete tasks (so we replace with tag's challenges)
+    db.query(models.UserChallengeProgress).filter(
+        models.UserChallengeProgress.user_id == current_user.id,
+        models.UserChallengeProgress.status != models.ChallengeStatus.completed,
+    ).delete()
+
+    # Assign the tag's challenges to the user
+    assignments = []
+    for challenge in challenges:
+        uc = models.UserChallengeProgress(user_id=current_user.id, challenge_id=challenge.id)
+        db.add(uc)
+        assignments.append(uc)
+
+    db.commit()
+    for uc in assignments:
+        db.refresh(uc)
+
+    return assignments
 
 
 @router.get("/{user_id}", response_model=schemas.NFCTagOut)

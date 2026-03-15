@@ -1,0 +1,10 @@
+[
+  {
+    "username": "demo",
+    "email": "demo@shellbreaker.app",
+    "password": "demo123",
+    "hashed_password": "$2b$12$n768AhYo5N7/c1LGJdD.9ezgGPH14gDleLgOe7Zd.f2T3i44/vPQi",
+    "display_name": "Demo User",
+    "coins": 100
+  }
+]
