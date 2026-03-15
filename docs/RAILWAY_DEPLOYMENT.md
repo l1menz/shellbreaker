@@ -10,7 +10,7 @@ Deploy ShellBreaker to Railway for NFC URL tags. Railway provides a public domai
 ## Step 1: Create Railway Project
 
 1. Go to [railway.app](https://railway.app) and create a new project
-2. Add **PostgreSQL** from the plugin catalog (Railway will set `DATABASE_URL` automatically)
+2. Add **PostgreSQL** from the plugin catalog (this creates a database service)
 
 ## Step 2: Deploy Backend
 
@@ -18,11 +18,15 @@ Deploy ShellBreaker to Railway for NFC URL tags. Railway provides a public domai
 2. Configure the backend service:
    - **Root Directory**: `backend`
    - **Dockerfile Path**: `Dockerfile` (auto-detected)
-3. Add **Variables**:
+3. **Link the database** – In the backend service, go to **Variables** → **+ New Variable** → **Add Reference**:
+   - Variable: `DATABASE_URL`
+   - Reference: Select your **PostgreSQL** service → `DATABASE_URL`
+   - (This injects the database connection string into your backend)
+4. Add **Variables**:
    - `SECRET_KEY` – generate a random string (e.g. `openssl rand -hex 32`)
    - `CORS_ORIGINS` – leave empty for now; we'll set it after frontend deploys
-4. Under **Settings** → **Networking** → enable **Generate Domain**
-5. Deploy and copy the generated URL (e.g. `https://unihack-2026-backend.up.railway.app`)
+5. Under **Settings** → **Networking** → enable **Generate Domain**
+6. Deploy and copy the generated URL (e.g. `https://unihack-2026-backend.up.railway.app`)
 
 ## Step 3: Deploy Frontend
 
@@ -87,6 +91,28 @@ Short URLs (for small NFC tags):
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `VITE_API_BASE_URL` | Yes | Backend API URL (must be set at build time) |
+
+## Troubleshooting
+
+### "DATABASE_URL environment variable is not set" / Container crashes on start
+
+The backend needs `DATABASE_URL` from your PostgreSQL database. Add it as a **variable reference**:
+
+1. Open your **backend** service in Railway
+2. Go to **Variables** tab
+3. Click **+ New Variable** → **Add Reference**
+4. Variable name: `DATABASE_URL`
+5. Select your **PostgreSQL** service → `DATABASE_URL`
+6. Save – Railway will redeploy automatically
+
+### Manual DATABASE_URL (alternative)
+
+If "Add Reference" isn't available, copy the URL manually:
+
+1. Click your **PostgreSQL** service
+2. Go to **Connect** or **Variables** tab
+3. Copy the `DATABASE_URL` value (starts with `postgresql://` or `postgres://`)
+4. In your **backend** service → Variables → Add: `DATABASE_URL` = (paste the value)
 
 ## Local Docker Test (optional)
 
