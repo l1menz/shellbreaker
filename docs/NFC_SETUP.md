@@ -57,17 +57,9 @@ Some NFC tags have limited storage (~48 bytes for basic tags). Use the short pat
 
 Example: `https://shellbreaker.app/f` (saves ~20 characters vs full URL)
 
-## Environment Variables
+## Deployment
 
-**Frontend** (`frontend/.env.production`):
-```env
-VITE_API_BASE_URL=https://api.shellbreaker.app
-```
-
-**Backend** – Add your production frontend URL to CORS in `backend/app/main.py`:
-```python
-allow_origins=["http://localhost:5173", "https://shellbreaker.app"],
-```
+For Railway deployment (recommended for NFC), see [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md).
 
 ## Tag Types & Challenges
 

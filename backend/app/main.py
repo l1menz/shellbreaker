@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,10 +17,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
-#Vite dev server
+# CORS: use CORS_ORIGINS env (comma-separated) or default to localhost
+_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+cors_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
