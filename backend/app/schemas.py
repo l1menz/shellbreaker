@@ -52,7 +52,9 @@ class ChallengeBase(BaseModel):
     instructions: Optional[str] = None
     difficulty: DifficultyLevel = DifficultyLevel.easy
     category: ChallengeCategory = ChallengeCategory.greeting
+    tag_type: Optional[str] = None
     xp_reward: int = 10
+    coin_reward: int = 0
     requires_partner: bool = False
 
 
@@ -143,6 +145,11 @@ class NFCCheckin(BaseModel):
     tag_owner_id: int
 
 
+class NFCTagScan(BaseModel):
+    """Body for scanning an NFC tag to load its challenges."""
+    tag_type: str  # "fitness", "social", "career", "skills"
+
+
 # ─────────────────────────────────────────────
 # Auth schemas
 # ─────────────────────────────────────────────
@@ -152,6 +159,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
+    username: Optional[str] = None
     user_id: Optional[int] = None
 
 

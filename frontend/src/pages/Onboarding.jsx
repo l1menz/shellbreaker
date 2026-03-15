@@ -51,13 +51,13 @@ export default function Onboarding() {
       {/* Bottom CTAs */}
       <div className="w-full space-y-3">
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/register')}
           className="btn-primary w-full text-sm py-4 animate-glow-pulse"
         >
           Get Started
         </button>
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/login')}
           className="btn-ghost w-full text-sm py-3"
         >
           I already have an account

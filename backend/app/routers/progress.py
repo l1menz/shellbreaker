@@ -18,25 +18,25 @@ def get_todays_challenges(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     """
-    Return today's challenges for the current user.
-    If none have been assigned yet today, randomly assign DAILY_CHALLENGE_COUNT challenges.
+    Return the current user's active challenges.
+    - If they have incomplete tasks (from NFC scan or previous assignment), return those.
+    - If none, randomly assign DAILY_CHALLENGE_COUNT challenges as fallback.
     """
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-
     existing = (
         db.query(models.UserChallengeProgress)
         .filter(
             models.UserChallengeProgress.user_id == current_user.id,
-            models.UserChallengeProgress.assigned_at >= today_start,
+            models.UserChallengeProgress.status != models.ChallengeStatus.completed,
         )
+        .order_by(models.UserChallengeProgress.assigned_at.desc())
         .all()
     )
 
     if existing:
         return existing
 
-    # Assign fresh challenges for today — avoid ones already completed recently
-    all_challenges = db.query(models.Challenge).all()
+    # Fallback: assign random challenges (user hasn't scanned NFC yet)
+    all_challenges = db.query(models.Challenge).filter(models.Challenge.is_active == True).all()
     selected = random.sample(all_challenges, min(DAILY_CHALLENGE_COUNT, len(all_challenges)))
 
     assignments = []
@@ -76,8 +76,9 @@ def complete_challenge(
     uc.status = models.ChallengeStatus.completed
     uc.completed_at = datetime.now(timezone.utc)
 
-    # Award XP
+    # Award XP and coins
     current_user.xp += uc.challenge.xp_reward
+    current_user.coins += getattr(uc.challenge, "coin_reward", 0) or 0
 
     db.commit()
     db.refresh(uc)

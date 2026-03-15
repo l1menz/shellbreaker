@@ -1,23 +1,33 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import * as api from '../api'
 
 const AppContext = createContext(null)
 
-const initialTasks = {
-  Life: [
-    { id: 1, text: 'Touch grass', done: false },
-    { id: 2, text: 'Call mum', done: false },
-    { id: 3, text: 'Read a book', done: true },
-    { id: 4, text: 'Cook dinner', done: false },
-  ],
-  Gym: [
-    { id: 5, text: 'Hit a PR', done: false },
-    { id: 6, text: '100 pushups', done: true },
-    { id: 7, text: 'Run 5km', done: false },
-  ],
-  Career: [
-    { id: 8, text: 'Apply 5 jobs', done: false },
-    { id: 9, text: 'Update CV', done: false },
-  ],
+// Map backend category to frontend tab names
+const CATEGORY_MAP = {
+  activity: 'Gym',
+  dare: 'Life',
+  conversation: 'Career',
+  greeting: 'Life',
+}
+
+function mapTodayToTasks(todayList = []) {
+  const Life = []
+  const Gym = []
+  const Career = []
+  for (const uc of todayList) {
+    const category = (uc.challenge?.category && CATEGORY_MAP[uc.challenge.category]) || 'Life'
+    const item = {
+      id: uc.id,
+      text: uc.challenge?.title || 'Challenge',
+      done: uc.status === 'completed',
+      userChallengeId: uc.id,
+    }
+    if (category === 'Life') Life.push(item)
+    else if (category === 'Gym') Gym.push(item)
+    else Career.push(item)
+  }
+  return { Life, Gym, Career }
 }
 
 const initialCompetitions = [
@@ -26,50 +36,158 @@ const initialCompetitions = [
   { id: 3, opponent: 'Gyat', challenge: '100 pushups', wager: 100, timeLeft: '2d', status: 'active' },
 ]
 
+const initialSquad = [
+  { id: 1, name: 'Gyat', emoji: '🐉', status: 'online' },
+  { id: 2, name: 'Blat', emoji: '🦁', status: 'away' },
+  { id: 3, name: 'Splat', emoji: '🐯', status: 'offline' },
+]
+
 export function AppProvider({ children }) {
-  const [currency, setCurrency] = useState(80)
-  const [tasks, setTasks] = useState(initialTasks)
+  const [token, setTokenState] = useState(() => api.getToken())
+  const [user, setUser] = useState(null)
+  const [challenges, setChallenges] = useState([])
+  const [todayChallenges, setTodayChallenges] = useState([])
   const [competitions, setCompetitions] = useState(initialCompetitions)
-  const [stats] = useState({
-    challengesComplete: 3,
-    wagersWon: 1,
-    peopleMet: 7,
-    friendsSecured: 3,
-  })
-  const [squad] = useState([
-    { id: 1, name: 'Gyat', emoji: '🐉', status: 'online' },
-    { id: 2, name: 'Blat', emoji: '🦁', status: 'away' },
-    { id: 3, name: 'Splat', emoji: '🐯', status: 'offline' },
-  ])
-  const [user] = useState({
-    name: 'You',
-    emoji: '🔥',
-    bio: 'Breaking shells one tap at a time.',
-  })
+  const [squad] = useState(initialSquad)
+  const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState(null)
 
-  const toggleTask = (category, taskId) => {
-    setTasks(prev => ({
-      ...prev,
-      [category]: prev[category].map(t =>
-        t.id === taskId ? { ...t, done: !t.done } : t
-      ),
-    }))
+  const setToken = useCallback((newToken) => {
+    api.setToken(newToken)
+    setTokenState(newToken)
+  }, [])
+
+  const refreshUser = useCallback(async () => {
+    if (!api.getToken()) return
+    try {
+      const me = await api.getMe()
+      setUser(me)
+    } catch {
+      setToken(null)
+      setUser(null)
+    }
+  }, [setToken])
+
+  const refreshToday = useCallback(async () => {
+    if (!api.getToken()) return
+    try {
+      const list = await api.getTodayChallenges()
+      setTodayChallenges(list)
+    } catch {
+      setTodayChallenges([])
+    }
+  }, [])
+
+  const refreshChallenges = useCallback(async () => {
+    try {
+      const list = await api.getChallenges()
+      setChallenges(list)
+    } catch {
+      setChallenges([])
+    }
+  }, [])
+
+  const refreshAll = useCallback(async () => {
+    setLoading(true)
+    setAuthError(null)
+    try {
+      if (api.getToken()) {
+        await Promise.all([refreshUser(), refreshToday(), refreshChallenges()])
+      } else {
+        setUser(null)
+        setTodayChallenges([])
+        await refreshChallenges()
+      }
+    } catch (e) {
+      setAuthError(e.message)
+      if (e.message?.includes('401') || e.message?.toLowerCase().includes('credentials')) {
+        setToken(null)
+        setUser(null)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [refreshUser, refreshToday, refreshChallenges, setToken])
+
+  useEffect(() => {
+    refreshAll()
+  }, [token, refreshAll])
+
+  const login = useCallback(async (username, password) => {
+    const data = await api.login(username, password)
+    setToken(data.access_token)
+    await refreshUser()
+  }, [setToken, refreshUser])
+
+  const registerUser = useCallback(async ({ username, email, password }) => {
+    await api.register({ username, email, password })
+    await login(username, password)
+  }, [login])
+
+  const logout = useCallback(() => {
+    setToken(null)
+    setUser(null)
+    setTodayChallenges([])
+  }, [setToken])
+
+  const toggleTask = useCallback(async (category, taskIdOrUserChallengeId) => {
+    const uc = todayChallenges.find((c) => c.id === taskIdOrUserChallengeId)
+    if (!uc || uc.status === 'completed') return
+    try {
+      await api.completeChallenge(uc.id)
+      await refreshToday()
+      await refreshUser()
+    } catch (e) {
+      console.error('Complete challenge failed', e)
+    }
+  }, [todayChallenges, refreshToday, refreshUser])
+
+  const addCompetition = useCallback((comp) => {
+    setCompetitions((prev) => [...prev, { ...comp, id: Date.now() }])
+    if (user?.coins != null) setUser((u) => ({ ...u, coins: (u.coins ?? 0) - (comp.wager || 0) }))
+  }, [user])
+
+  const tasks = mapTodayToTasks(todayChallenges)
+  const currency = user?.coins ?? 0
+  const stats = {
+    challengesComplete: user?.xp ? Math.floor(user.xp / 10) : 0,
+    wagersWon: 0,
+    peopleMet: 0,
+    friendsSecured: squad.length,
   }
 
-  const addCompetition = (comp) => {
-    setCompetitions(prev => [...prev, { ...comp, id: Date.now() }])
-    setCurrency(prev => prev - comp.wager)
-  }
+  const userDisplay = user
+    ? {
+        name: user.display_name || user.username,
+        emoji: '🔥',
+        bio: `Level ${user.level} · ${user.xp} XP`,
+      }
+    : { name: 'You', emoji: '🔥', bio: 'Sign in to track progress.' }
 
   return (
-    <AppContext.Provider value={{
-      currency, setCurrency,
-      tasks, toggleTask,
-      competitions, addCompetition,
-      stats,
-      squad,
-      user,
-    }}>
+    <AppContext.Provider
+      value={{
+        token,
+        user,
+        loading,
+        authError,
+        login,
+        registerUser,
+        logout,
+        refreshAll,
+        setToken,
+        currency,
+        tasks,
+        toggleTask,
+        challenges,
+        competitions,
+        addCompetition,
+        stats,
+        squad,
+        user: userDisplay,
+        todayChallenges,
+      }}
+    >
       {children}
     </AppContext.Provider>
   )

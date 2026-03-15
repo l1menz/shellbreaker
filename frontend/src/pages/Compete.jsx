@@ -1,33 +1,26 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-
-const CHALLENGES = [
-  'Run 5km',
-  '100 pushups',
-  'Read a book',
-  'Cook a meal',
-  'No social media for a day',
-  'Talk to a stranger',
-  'Hit a gym PR',
-  'Apply for 3 jobs',
-]
 
 const TIME_LIMITS = ['1 day', '3 days', '1 week', '2 weeks', '1 month']
 
 export default function Compete() {
   const navigate = useNavigate()
-  const { addCompetition, currency } = useApp()
+  const { addCompetition, currency, challenges } = useApp()
+  const challengeOptions = useMemo(() => challenges.map((c) => ({ id: c.id, title: c.title })), [challenges])
   const [wager, setWager] = useState(200)
   const [timeLimit, setTimeLimit] = useState('2 weeks')
-  const [challenge, setChallenge] = useState(CHALLENGES[0])
+  const [challenge, setChallenge] = useState('')
   const [tapping, setTapping] = useState(false)
+  useEffect(() => {
+    if (challengeOptions.length && !challenge) setChallenge(challengeOptions[0].title)
+  }, [challengeOptions, challenge])
 
   const handleTap = () => {
     if (wager > currency) return
     setTapping(true)
     setTimeout(() => {
-      navigate('/scan', { state: { wager, timeLimit, challenge } })
+      navigate('/scan', { state: { wager, timeLimit, challenge: challenge || challengeOptions[0]?.title } })
     }, 600)
   }
 
@@ -137,8 +130,8 @@ export default function Compete() {
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-500/50 transition-colors"
             style={{ colorScheme: 'dark' }}
           >
-            {CHALLENGES.map((c) => (
-              <option key={c} value={c} className="bg-[#111]">{c}</option>
+            {challengeOptions.map((c) => (
+              <option key={c.id} value={c.title} className="bg-[#111]">{c.title}</option>
             ))}
           </select>
         </div>

@@ -2,7 +2,7 @@ import { useApp } from '../context/AppContext'
 import ProgressBar from '../components/ProgressBar'
 
 export default function Profile() {
-  const { user, stats, currency, squad } = useApp()
+  const { user, stats, currency, squad, logout } = useApp()
 
   return (
     <div className="px-4 pb-6 pt-2 space-y-5 animate-fade-in">
@@ -46,6 +46,13 @@ export default function Profile() {
           </div>
         ))}
       </div>
+
+      <button
+        onClick={logout}
+        className="btn-ghost w-full text-red-400/80 hover:text-red-400 text-sm py-2"
+      >
+        Sign out
+      </button>
 
       {/* Social links placeholder */}
       <div className="glass-card p-4">

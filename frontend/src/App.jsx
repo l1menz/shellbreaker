@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import MobileLayout from './layouts/MobileLayout'
+import ProtectedRoute from './components/ProtectedRoute'
 import Onboarding from './pages/Onboarding'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import Home from './pages/Home'
 import Compete from './pages/Compete'
 import Competition from './pages/Competition'
@@ -14,16 +17,23 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <div className="flex items-center justify-center min-h-screen bg-black">
-          {/* Mobile frame */}
           <div
             className="relative w-full bg-[#0a0a0a] overflow-hidden"
             style={{ maxWidth: 430, height: '100dvh' }}
           >
             <Routes>
               <Route path="/" element={<Onboarding />} />
-              <Route path="/scan" element={<NFCScan />} />
-              <Route element={<MobileLayout />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <MobileLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route path="/home" element={<Home />} />
+                <Route path="/scan" element={<NFCScan />} />
                 <Route path="/compete" element={<Compete />} />
                 <Route path="/competition" element={<Competition />} />
                 <Route path="/stats" element={<Stats />} />

@@ -69,7 +69,9 @@ class Challenge(Base):
     instructions = Column(Text, nullable=True)        # step-by-step guide
     difficulty = Column(Enum(DifficultyLevel), default=DifficultyLevel.easy)
     category = Column(Enum(ChallengeCategory), default=ChallengeCategory.greeting)
+    tag_type = Column(String(32), nullable=True, index=True)  # "fitness", "social", "career", "skills" - which NFC tag pack
     xp_reward = Column(Integer, default=10)
+    coin_reward = Column(Integer, default=0)         # coins awarded on completion
     requires_partner = Column(Boolean, default=False)  # NFC / two-player challenges
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

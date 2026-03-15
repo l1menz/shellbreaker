@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import SquadCard from '../components/SquadCard'
 
@@ -7,18 +8,56 @@ const CATEGORIES = ['Life', 'Gym', 'Career']
 const CATEGORY_ICONS = { Life: '🌱', Gym: '💪', Career: '💼' }
 
 export default function Home() {
+  const navigate = useNavigate()
   const { tasks, toggleTask, squad } = useApp()
   const [activeTab, setActiveTab] = useState('Life')
 
-  const completedCount = Object.values(tasks).flat().filter(t => t.done).length
-  const totalCount = Object.values(tasks).flat().length
+  const taskList = Object.values(tasks).flat()
+  const completedCount = taskList.filter(t => t.done).length
+  const totalCount = taskList.length
+
+  if (totalCount === 0) {
+    return (
+      <div className="px-4 pb-6 pt-2 space-y-5 animate-fade-in">
+        <div>
+          <h1 className="pixel-text text-lg text-white">My Tasks</h1>
+          <p className="text-white/40 text-xs mt-1.5">0/0 completed</p>
+        </div>
+        <div className="glass-card p-6 text-center space-y-4">
+          <p className="text-white/50 text-sm">No tasks yet. Scan an NFC tag to load challenges.</p>
+          <button
+            onClick={() => navigate('/scan')}
+            className="btn-primary w-full text-sm py-3"
+          >
+            📡 Scan NFC Tag
+          </button>
+        </div>
+        <div>
+          <h2 className="pixel-text text-xs text-white/60 mb-4">My Squad</h2>
+          <div className="flex gap-4 justify-center">
+            {squad.map((member) => (
+              <SquadCard key={member.id} member={member} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 pb-6 pt-2 space-y-5 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="pixel-text text-lg text-white">My Tasks</h1>
-        <p className="text-white/40 text-xs mt-1.5">{completedCount}/{totalCount} completed</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="pixel-text text-lg text-white">My Tasks</h1>
+          <p className="text-white/40 text-xs mt-1.5">{completedCount}/{totalCount} completed</p>
+        </div>
+        <button
+          onClick={() => navigate('/scan')}
+          className="text-purple-400/80 hover:text-purple-400 text-xs flex items-center gap-1"
+        >
+          📡 Scan
+        </button>
       </div>
 
       {/* Progress bar */}
@@ -59,7 +98,7 @@ export default function Home() {
         {tasks[activeTab].map((task) => (
           <button
             key={task.id}
-            onClick={() => toggleTask(activeTab, task.id)}
+            onClick={() => toggleTask(activeTab, task.userChallengeId ?? task.id)}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.98] ${
               task.done
                 ? 'bg-purple-600/10 border-purple-500/30'
