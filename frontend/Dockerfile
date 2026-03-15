@@ -14,21 +14,17 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 RUN npm run build
 
-# Serve stage
-FROM nginx:alpine
+# Serve stage - use serve (respects Railway's PORT)
+FROM node:20-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+RUN npm install -g serve
 
-# SPA routing: serve index.html for all routes
-RUN echo 'server { \
-    listen 80; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /app/dist
 
-EXPOSE 80
+WORKDIR /app/dist
 
-CMD ["nginx", "-g", "daemon off;"]
+# Railway injects PORT; default 3000 for local
+ENV PORT=3000
+EXPOSE 3000
+
+CMD ["sh", "-c", "serve -s . -l ${PORT:-3000}"]
